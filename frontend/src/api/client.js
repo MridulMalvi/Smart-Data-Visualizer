@@ -14,9 +14,12 @@ const api = axios.create({
 export const uploadFile = (file, onProgress) => {
   const fd = new FormData()
   fd.append('file', file)
+  // NOTE: Do NOT set Content-Type manually.
+  // When FormData is passed, axios (and the browser) set it automatically
+  // as: multipart/form-data; boundary=----FormBoundaryXXXX
+  // Setting it manually removes the boundary, breaking the server parser.
   return api.post('/upload/', fd, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-    onUploadProgress: e => onProgress?.(Math.round(e.loaded / e.total * 100)),
+    onUploadProgress: e => onProgress?.(Math.round((e.loaded / (e.total || e.loaded)) * 100)),
   })
 }
 

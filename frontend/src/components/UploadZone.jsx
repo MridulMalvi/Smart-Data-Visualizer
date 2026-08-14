@@ -41,7 +41,11 @@ export default function UploadZone() {
       setPreview(prev.data)
       setSummary(summ.data)
     } catch (err) {
-      const msg = err.response?.data?.detail || err.message || 'Upload failed.'
+      let msg = err.response?.data?.detail || err.message || 'Upload failed.'
+      // Axios wraps connection failures as "Network Error" with no response
+      if (!err.response && (err.message === 'Network Error' || err.code === 'ERR_NETWORK')) {
+        msg = 'Cannot connect to the backend server. Make sure it is running on port 8000 (uvicorn app.main:app --port 8000).'
+      }
       setUploadStatus('error', msg)
     }
   }, [setUploadStatus, setUploadProgress, setSession, setPreview, setSummary])

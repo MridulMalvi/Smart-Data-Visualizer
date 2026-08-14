@@ -75,11 +75,29 @@ export default function ChartCanvas() {
     showTrendline, showOutliers,
   } = useAppStore()
 
+  // ── All hooks MUST come before any early returns (Rules of Hooks) ───────────
+
+  // Pre-compute data safely — chartData may be null during loading
+  const rawData = chartData?.data
+  const data = Array.isArray(rawData) ? rawData : []
+  const xKey = chartData?.x_key || 'x'
+  const yKey = chartData?.y_key || 'y'
+  const trendline = chartData?.trendline ?? null
+
   // Find outlier row indices for highlight
   const outlierIndices = useMemo(
     () => new Set(chartData?.outliers?.row_indices || []),
     [chartData]
   )
+
+  // Enrich scatter data with outlier flag
+  const enrichedData = useMemo(() => {
+    if (!data.length) return []
+    if (!showOutliers || chartType !== 'scatter') return data
+    return data.map((row, i) => ({ ...row, _outlier: outlierIndices.has(i) }))
+  }, [data, showOutliers, chartType, outlierIndices])
+
+  // ── Early returns (all hooks are above) ───────────────────────────────
 
   if (chartLoading) {
     return (
@@ -109,12 +127,6 @@ export default function ChartCanvas() {
     )
   }
 
-  // Guard: API may return no data field in edge cases
-  const { data: rawData, x_key, y_key, trendline } = chartData
-  const data = Array.isArray(rawData) ? rawData : []
-  const xKey = x_key || 'x'
-  const yKey = y_key || 'y'
-
   const commonProps = {
     margin: { top: 10, right: 20, left: 0, bottom: 40 },
   }
@@ -123,13 +135,6 @@ export default function ChartCanvas() {
     axisLine: { stroke: 'var(--border-clay)' },
     tickLine: false,
   }
-
-  // ── Enrich scatter data with outlier flag ─────────────────────────────────
-  const enrichedData = useMemo(() => {
-    if (!data.length) return []
-    if (!showOutliers || chartType !== 'scatter') return data
-    return data.map((row, i) => ({ ...row, _outlier: outlierIndices.has(i) }))
-  }, [data, showOutliers, chartType, outlierIndices])
 
   let chart
 
@@ -189,7 +194,6 @@ export default function ChartCanvas() {
           <YAxis dataKey={yKey} type="number" {...axisProps} name={yColumn} />
           <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }} />
           <Scatter
-            dataKey={yKey}
             fill={COLORS[2]}
             name={`${xColumn} vs ${yColumn}`}
           >
