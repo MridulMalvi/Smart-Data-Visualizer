@@ -21,7 +21,9 @@ async def parse_natural_query(request: NLQRequest):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found or expired.")
 
     columns = [c["name"] for c in session["columns"]]
+    # dtype map lets the parser prefer numeric columns when auto-filling y
+    column_dtypes = {c["name"]: c["dtype"] for c in session["columns"]}
 
-    result = parse_nlq(query=request.query, columns=columns)
+    result = parse_nlq(query=request.query, columns=columns, column_dtypes=column_dtypes)
 
     return NLQResponse(**result)

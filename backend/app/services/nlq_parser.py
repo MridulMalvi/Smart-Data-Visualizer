@@ -9,7 +9,9 @@ Resolution logic
 1. Extract chart-type keywords from the query → chart_type
 2. Extract candidate tokens (nouns / phrases) → try to match against column names
 3. Assign x_col (first match) and y_col (second match) using chart-type hints
-4. Return confidence score; if below threshold → return clarification suggestion
+4. If only one column matched and a second is needed, auto-pick a best numeric
+   fallback from the dataset columns so the query resolves instead of failing.
+5. Return confidence score; if below threshold → return clarification suggestion
 
 Chart keyword mapping
 ─────────────────────
@@ -29,7 +31,7 @@ from rapidfuzz import fuzz, process
 
 # Minimum fuzzy-match score (0-100) to accept a column name resolution
 COLUMN_CONFIDENCE_THRESHOLD = 55
-CHART_RESOLUTION_THRESHOLD = 0.4  # fraction of tokens matched
+CHART_RESOLUTION_THRESHOLD = 0.35   # lowered slightly so single-col matches resolve
 
 
 # ── Chart keyword groups ──────────────────────────────────────────────────────
@@ -68,14 +70,27 @@ _CHART_KEYWORDS: dict[str, list[str]] = {
 # Chart types that strongly hint which column is X vs Y
 _X_FIRST_CHARTS = {"line", "bar", "scatter"}
 
+# Chart types that REQUIRE two columns
+_NEEDS_TWO_COLS = {"scatter", "line", "bar"}
 
-def parse_nlq(query: str, columns: list[str]) -> dict[str, Any]:
+# Chart types that work fine with one column
+_ONE_COL_OK = {"histogram", "pie", "box"}
+
+
+def parse_nlq(
+    query: str,
+    columns: list[str],
+    column_dtypes: Optional[dict[str, str]] = None,
+) -> dict[str, Any]:
     """
     Parse a natural language query and return a resolved chart config.
 
     Args:
-        query:   Raw user query string.
-        columns: Column names available in the current dataset.
+        query:         Raw user query string.
+        columns:       Column names available in the current dataset.
+        column_dtypes: Optional map of column → pandas dtype string.
+                       Used to auto-select a sensible y column when only
+                       one column is mentioned by the user.
 
     Returns:
         dict with keys:
@@ -101,16 +116,24 @@ def parse_nlq(query: str, columns: list[str]) -> dict[str, Any]:
         x_col = matched_cols[0]
         y_col = matched_cols[1] if len(matched_cols) > 1 else None
 
-    # For chart types that typically have x=category and y=numeric,
-    # try to reorder so the numeric column is y.
-    if chart_type in ("bar", "line") and x_col and y_col:
-        pass  # user order respected; swap logic below handles edge cases
+    # ── Step 4b: Auto-fill missing y column ──────────────────────────────────
+    # When the chart type needs two columns but only one was mentioned,
+    # pick the best numeric column (or any other column) as y automatically.
+    if chart_type in _NEEDS_TWO_COLS and x_col and not y_col:
+        y_col = _auto_pick_second_col(x_col, columns, column_dtypes)
 
     # ── Step 5: Compute overall confidence ────────────────────────────────────
-    confidence = _compute_confidence(chart_type, chart_score, matched_cols)
+    effective_matched = [c for c in [x_col, y_col] if c]
+    confidence = _compute_confidence(chart_type, chart_score, effective_matched)
 
     # ── Step 6: Determine resolution ─────────────────────────────────────────
-    if chart_type and confidence >= CHART_RESOLUTION_THRESHOLD and (x_col or matched_cols):
+    # Histogram / pie / box can resolve with just x_col
+    enough_cols = (
+        (chart_type in _ONE_COL_OK and x_col)
+        or (chart_type in _NEEDS_TWO_COLS and x_col)   # y auto-filled above
+        or (x_col)
+    )
+    if chart_type and confidence >= CHART_RESOLUTION_THRESHOLD and enough_cols:
         return {
             "resolved": True,
             "chart_type": chart_type,
@@ -121,7 +144,7 @@ def parse_nlq(query: str, columns: list[str]) -> dict[str, Any]:
         }
 
     # ── Not resolved — generate clarification ────────────────────────────────
-    suggestion = _build_clarification(chart_type, matched_cols, columns)
+    suggestion = _build_clarification(chart_type, [c for c in [x_col, y_col] if c], columns)
     return {
         "resolved": False,
         "chart_type": chart_type,
@@ -227,6 +250,37 @@ def _fuzzy_match_columns(tokens: list[str], columns: list[str]) -> list[str]:
     return matched
 
 
+# ── Auto second-column selection ──────────────────────────────────────────────
+
+def _auto_pick_second_col(
+    x_col: str,
+    columns: list[str],
+    column_dtypes: Optional[dict[str, str]],
+) -> Optional[str]:
+    """
+    When the user mentions only one column but the chart type needs two,
+    automatically pick a sensible second column:
+      1. Prefer numeric (int/float) columns that are not the x column.
+      2. Fall back to any other column that is not the x column.
+    Returns None if there are no other columns.
+    """
+    others = [c for c in columns if c != x_col]
+    if not others:
+        return None
+
+    if column_dtypes:
+        # Prefer numeric columns
+        numeric_others = [
+            c for c in others
+            if any(column_dtypes.get(c, "").startswith(t) for t in ("int", "float", "number"))
+        ]
+        if numeric_others:
+            return numeric_others[0]
+
+    # Fall back to first non-x column
+    return others[0]
+
+
 # ── Confidence scoring ────────────────────────────────────────────────────────
 
 def _compute_confidence(
@@ -237,7 +291,8 @@ def _compute_confidence(
     """Simple weighted confidence: chart type + column resolution."""
     if not chart_type:
         return 0.0
-    col_score = min(len(matched_cols) / 2, 1.0)  # 2 matched cols → 1.0
+    # 1 matched col still gives 0.5 col_score; 2+ gives full 1.0
+    col_score = min(len(matched_cols) / 2, 1.0)
     return 0.5 * chart_score + 0.5 * col_score
 
 
@@ -261,11 +316,6 @@ def _build_clarification(
             f"I couldn't match any column names. "
             f"Your dataset has columns like: {sample}. "
             f"Please mention one or more of these in your query."
-        )
-    elif len(matched_cols) == 1 and chart_type in ("scatter", "line", "bar"):
-        parts.append(
-            f'Found column "{matched_cols[0]}" but also need a second column for {chart_type} chart. '
-            f"Try: \"{matched_cols[0]} vs <another column>\"."
         )
 
     return " ".join(parts) if parts else "Could not fully resolve the query. Please rephrase."
