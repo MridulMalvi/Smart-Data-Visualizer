@@ -1,0 +1,13 @@
+# Local environment and dependencies
+.venv/
+backend/.venv/
+backend/.pytest_cache/
+frontend/dist/
+frontend/node_modules/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Local documentation / specifications
+PRD.md
