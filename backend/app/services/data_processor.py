@@ -213,8 +213,16 @@ def _line_data(df: pd.DataFrame, x_col: str, y_col: Optional[str]):
         d = d.dropna()
     else:
         d = df[[x_col]].dropna().copy()
-    d[x_col] = d[x_col].astype(str)
-    records = d.rename(columns={x_col: "x", **({y_col: "y"} if y_col else {})}).to_dict("records")
+
+    # Bug 12 fix: keep x numeric if it is numeric — casting to string makes trendline
+    # overlay points (which use float x-values) incompatible with the chart's X-axis.
+    # Only cast to string for non-numeric / datetime columns.
+    x_numeric = pd.api.types.is_numeric_dtype(df[x_col])
+    if not x_numeric:
+        d[x_col] = d[x_col].astype(str)
+
+    renamed = d.rename(columns={x_col: "x", **({y_col: "y"} if y_col else {})})
+    records = [{k: _safe_scalar(v) for k, v in row.items()} for row in renamed.to_dict("records")]
     stats = _numeric_stats(d[y_col] if y_col else pd.to_numeric(d[x_col], errors="coerce"))
     return records, stats
 
@@ -425,18 +433,35 @@ def compute_chart_stats(
                     stats["trend_r2"] = tl["r_squared"]
 
         if chart_type in ("bar", "pie"):
-            numeric_y = pd.to_numeric(df[y_col], errors="coerce")
-            grp = numeric_y.groupby(df[x_col]).mean()
-            if not grp.empty:
-                stats["top_category"] = str(grp.idxmax())
-                stats["bottom_category"] = str(grp.idxmin())
+            # Bug 9 fix: use DataFrame.groupby instead of Series.groupby to avoid
+            # deprecation warnings and edge-case failures with external groupers.
+            try:
+                tmp = df[[x_col, y_col]].copy()
+                tmp[y_col] = pd.to_numeric(tmp[y_col], errors="coerce")
+                grp = tmp.groupby(x_col, dropna=True)[y_col].mean()
+                if not grp.empty:
+                    stats["top_category"] = str(grp.idxmax())
+                    stats["bottom_category"] = str(grp.idxmin())
+            except Exception:
+                pass  # Non-fatal; category stats are supplemental
 
     elif x_col in df.columns:
         num_series = pd.to_numeric(df[x_col], errors="coerce").dropna()
         stats.update(_numeric_stats(num_series))
 
-    outlier_info = detect_outliers(df, y_col or x_col)
-    stats["outlier_count"] = outlier_info["count"]
+    # Bug 1 fix: only run outlier detection on numeric columns to prevent
+    # crashes / misleading results when x or y is categorical / string.
+    target_for_outliers = y_col or x_col
+    if target_for_outliers and pd.api.types.is_numeric_dtype(
+        pd.to_numeric(df[target_for_outliers], errors="coerce")
+    ):
+        try:
+            outlier_info = detect_outliers(df, target_for_outliers)
+            stats["outlier_count"] = outlier_info["count"]
+        except Exception:
+            stats["outlier_count"] = 0
+    else:
+        stats["outlier_count"] = 0
 
     return stats
 

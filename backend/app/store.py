@@ -13,7 +13,28 @@ import time
 import threading
 from typing import Any
 
+import numpy as np
 import pandas as pd
+
+
+def _json_safe(v: Any) -> Any:
+    """Convert numpy/pandas scalars and Timestamps to plain Python types."""
+    if isinstance(v, (np.integer,)):
+        return int(v)
+    if isinstance(v, (np.floating,)):
+        return float(v)
+    if isinstance(v, (np.bool_,)):
+        return bool(v)
+    if isinstance(v, pd.Timestamp):
+        return v.isoformat()
+    if isinstance(v, float) and (v != v):  # NaN
+        return None
+    try:
+        if pd.isna(v):
+            return None
+    except (TypeError, ValueError):
+        pass
+    return v
 
 # TTL: 1 hour in seconds
 SESSION_TTL = 3600
@@ -80,6 +101,9 @@ def _extract_column_meta(df: pd.DataFrame) -> list[dict]:
     meta = []
     for col in df.columns:
         dtype = str(df[col].dtype)
-        sample = df[col].dropna().head(3).tolist()
+        # Bug 8 fix: sanitize sample values so Timestamps / numpy scalars
+        # are converted to JSON-safe Python primitives.
+        raw_sample = df[col].dropna().head(3).tolist()
+        sample = [_json_safe(v) for v in raw_sample]
         meta.append({"name": col, "dtype": dtype, "sample": sample})
     return meta
