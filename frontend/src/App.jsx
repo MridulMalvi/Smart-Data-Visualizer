@@ -11,6 +11,7 @@ import ChartDock      from './components/ChartDock'
 import ChartCanvas    from './components/ChartCanvas'
 import NLQBar         from './components/NLQBar'
 import InsightTile    from './components/InsightTile'
+import ErrorBoundary  from './components/ErrorBoundary'
 
 export default function App() {
   const {
@@ -96,14 +97,38 @@ export default function App() {
   }, [requestChart])
 
   // ── PNG export ────────────────────────────────────────────────────────────
+  // Bug 6 fix: Recharts renders SVG, not Canvas. We must serialize the SVG to
+  // a Blob, draw it onto a temporary Canvas via an Image element, then export
+  // the Canvas as PNG. Calling .toDataURL() directly on an SVG element throws.
   const exportPNG = useCallback(() => {
-    const canvas = document.querySelector('#chart-canvas canvas') ||
-                   document.querySelector('.recharts-surface')
-    if (!canvas) { alert('No chart canvas found. Generate a chart first.'); return }
-    const link = document.createElement('a')
-    link.download = `chart-${Date.now()}.png`
-    link.href = canvas.toDataURL('image/png')
-    link.click()
+    const svgEl = document.querySelector('#chart-canvas svg')
+    if (!svgEl) { alert('No chart found. Generate a chart first.'); return }
+
+    const svgData = new XMLSerializer().serializeToString(svgEl)
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
+    const url = URL.createObjectURL(svgBlob)
+
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      // Use device pixel ratio for crisp exports
+      const scale = window.devicePixelRatio || 2
+      canvas.width  = svgEl.clientWidth  * scale
+      canvas.height = svgEl.clientHeight * scale
+      const ctx = canvas.getContext('2d')
+      ctx.scale(scale, scale)
+      // White background so transparent SVG areas aren't black
+      ctx.fillStyle = getComputedStyle(document.documentElement)
+        .getPropertyValue('--bg-card').trim() || '#ffffff'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.drawImage(img, 0, 0)
+      URL.revokeObjectURL(url)
+      const link = document.createElement('a')
+      link.download = `chart-${Date.now()}.png`
+      link.href = canvas.toDataURL('image/png')
+      link.click()
+    }
+    img.src = url
   }, [])
 
   const dataLoaded = !!sessionId
@@ -162,10 +187,13 @@ export default function App() {
       {/* ── Main Bento Grid ──────────────────────────────────────────────── */}
       <main className="bento-grid" id="main-content" role="main">
 
-        {/* Upload zone — always visible, collapses when data is loaded */}
-        <div className={dataLoaded ? 'bento-upload' : 'bento-upload'} style={dataLoaded ? { display: 'none' } : {}}>
-          <UploadZone />
-        </div>
+        {/* Bug 11 fix: only render one UploadZone. When no data is loaded show the
+            full-width hero version; after upload show a compact re-upload strip. */}
+        {!dataLoaded && (
+          <div className="bento-upload">
+            <UploadZone />
+          </div>
+        )}
 
         {/* After upload — show the full dashboard */}
         {dataLoaded && (
@@ -200,9 +228,12 @@ export default function App() {
               <ChartDock onChartRequest={requestChart} />
             </div>
 
-            {/* Chart canvas */}
+            {/* Chart canvas — wrapped in ErrorBoundary so chart errors don't
+                crash the whole dashboard (Bug 14 fix) */}
             <div className="bento-chart">
-              <ChartCanvas />
+              <ErrorBoundary>
+                <ChartCanvas />
+              </ErrorBoundary>
             </div>
 
             {/* Insight tile */}
