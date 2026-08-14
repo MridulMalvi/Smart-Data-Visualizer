@@ -9,7 +9,7 @@ const ALL_OPS = ['==', '!=', '>', '>=', '<', '<=', 'contains']
 
 export default function FilterBuilder() {
   const {
-    sessionId, columns, summary, filterRules,
+    sessionId, columns, summary, filterRules, filterResult,
     addFilterRule, updateFilterRule, removeFilterRule, setFilterResult,
   } = useAppStore()
 
@@ -54,8 +54,6 @@ export default function FilterBuilder() {
       setLoading(false)
     }
   }
-
-  const { filterResult } = useAppStore.getState()
 
   return (
     <div className="clay-card" style={{ padding: 20 }} id="filter-builder">
