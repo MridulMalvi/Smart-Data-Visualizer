@@ -1,6 +1,6 @@
 # Smart Data Visualizer
 
-An elegant, interactive, and fully local AI-powered data visualization dashboard. Upload any CSV or XLSX file, ask questions in plain English, configure charts, and get automatic AI-generated insights—all running entirely on your machine at **zero cost** with no paid API keys required.
+An elegant, interactive, and fully local AI-powered data visualization dashboard. Upload any CSV or XLSX file, ask questions in plain English, configure charts, and get automatic AI-generated insights—all running entirely on your machine .
 
 ---
 
