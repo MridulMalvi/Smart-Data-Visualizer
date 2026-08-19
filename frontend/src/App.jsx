@@ -203,40 +203,33 @@ export default function App() {
               <UploadZone />
             </div>
 
-            {/* Preview table */}
+            {/* Row 1: Preview table + Stats panel */}
             <div className="bento-preview">
               <PreviewTable />
             </div>
-
-            {/* Stats panel */}
             <div className="bento-stats">
               <StatsPanel />
             </div>
 
-            {/* NLQ bar */}
+            {/* Row 2: Filter builder + NLQ bar */}
+            <div className="bento-filter">
+              <FilterBuilder />
+            </div>
             <div className="bento-nlq">
               <NLQBar onResolved={handleNLQResolved} />
             </div>
 
-            {/* Filter builder */}
-            <div className="bento-filter">
-              <FilterBuilder />
-            </div>
-
-            {/* Chart dock */}
+            {/* Row 3: Chart dock (full width) */}
             <div className="bento-dock">
               <ChartDock onChartRequest={requestChart} />
             </div>
 
-            {/* Chart canvas — wrapped in ErrorBoundary so chart errors don't
-                crash the whole dashboard (Bug 14 fix) */}
+            {/* Row 4: Chart canvas + Insight tile */}
             <div className="bento-chart">
               <ErrorBoundary>
                 <ChartCanvas />
               </ErrorBoundary>
             </div>
-
-            {/* Insight tile */}
             <div className="bento-insight">
               <InsightTile onRegenerate={handleRegenerate} />
             </div>
