@@ -1,49 +1,54 @@
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════════════════
-   DESIGN TOKENS — Clay Color System
+   DESIGN TOKENS — Clay Color System (Light Mode — Premium Refresh)
 ═══════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Base surfaces */
-  --bg-base:        #F5F0E8;
-  --bg-card:        #FAF7F2;
-  --bg-card-hover:  #FDF9F5;
+  /* Base surfaces — cool, clean white tones */
+  --bg-base:        #F0F2F8;
+  --bg-card:        #FFFFFF;
+  --bg-card-hover:  #F8F9FD;
 
-  /* Text */
-  --text-primary:   #2C2417;
-  --text-secondary: #6B5B47;
-  --text-muted:     #9B8A75;
+  /* Text — bold, high-contrast dark tones */
+  --text-primary:   #0D0F1A;
+  --text-secondary: #2E3347;
+  --text-muted:     #5C6280;
 
-  /* Accents */
-  --accent-coral:   #FF6B6B;
-  --accent-coral-light: #FFB3B3;
-  --accent-sage:    #88B04B;
-  --accent-sage-light: #C5E08A;
-  --accent-periwinkle: #6B7FD7;
-  --accent-periwinkle-light: #B3BFF0;
+  /* Accents — richer, more vibrant */
+  --accent-coral:   #F06292;
+  --accent-coral-light: #F8BBD0;
+  --accent-sage:    #66BB6A;
+  --accent-sage-light: #A5D6A7;
+  --accent-periwinkle: #5C6BC0;
+  --accent-periwinkle-light: #9FA8DA;
 
-  /* Clay shadows — dual-tone */
+  /* Clay shadows — stronger, cooler tones for visibility */
   --shadow-clay-sm:
-    3px 3px 8px rgba(139, 110, 80, 0.18),
-    -2px -2px 6px rgba(255, 255, 255, 0.85);
+    3px 3px 10px rgba(100, 110, 140, 0.12),
+    -2px -2px 8px rgba(255, 255, 255, 0.95);
   --shadow-clay-md:
-    6px 6px 16px rgba(139, 110, 80, 0.22),
-    -3px -3px 10px rgba(255, 255, 255, 0.9);
+    6px 6px 20px rgba(100, 110, 140, 0.15),
+    -4px -4px 12px rgba(255, 255, 255, 1);
   --shadow-clay-lg:
-    10px 10px 28px rgba(139, 110, 80, 0.28),
-    -5px -5px 16px rgba(255, 255, 255, 0.95);
+    12px 12px 36px rgba(100, 110, 140, 0.18),
+    -6px -6px 20px rgba(255, 255, 255, 1);
   --shadow-clay-pressed:
-    2px 2px 6px rgba(139, 110, 80, 0.25),
-    -1px -1px 3px rgba(255, 255, 255, 0.7),
-    inset 2px 2px 6px rgba(139, 110, 80, 0.15),
-    inset -1px -1px 4px rgba(255, 255, 255, 0.6);
+    2px 2px 8px rgba(100, 110, 140, 0.18),
+    -1px -1px 4px rgba(255, 255, 255, 0.9),
+    inset 2px 2px 8px rgba(100, 110, 140, 0.1),
+    inset -1px -1px 5px rgba(255, 255, 255, 0.7);
 
   /* Border */
-  --border-clay:    rgba(139, 110, 80, 0.12);
+  --border-clay:    rgba(100, 110, 140, 0.1);
 
   /* Transitions */
   --transition-clay: 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Light-mode exclusive tokens */
+  --header-bg:      rgba(255, 255, 255, 0.72);
+  --gradient-accent: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --glow-accent:    rgba(92, 107, 192, 0.15);
 }
 
 /* Dark mode tokens */
@@ -69,6 +74,216 @@
     -1px -1px 3px rgba(255, 255, 255, 0.04),
     inset 2px 2px 8px rgba(0, 0, 0, 0.4),
     inset -1px -1px 4px rgba(255, 255, 255, 0.03);
+  --header-bg:      rgba(58, 47, 74, 0.85);
+  --gradient-accent: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --glow-accent:    rgba(92, 107, 192, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LIGHT MODE — Premium Visual Enhancements
+   (All rules scoped to :root / html:not([data-theme="dark"]))
+═══════════════════════════════════════════════════════════════════ */
+
+/* Animated subtle mesh gradient background */
+@keyframes meshGradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+html:not([data-theme="dark"]) body {
+  background:
+    radial-gradient(ellipse at 10% 20%, rgba(92, 107, 192, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 75%, rgba(240, 98, 146, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(102, 187, 106, 0.05) 0%, transparent 60%),
+    linear-gradient(135deg, #EEF0F7 0%, #F3F0FA 35%, #F0F2F8 65%, #EDF5F0 100%);
+  background-size: 200% 200%;
+  animation: meshGradientShift 20s ease infinite;
+}
+
+/* Frosted glass header in light mode */
+html:not([data-theme="dark"]) .app-header {
+  background: var(--header-bg);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  border-bottom: 1px solid rgba(100, 110, 140, 0.08);
+  box-shadow:
+    0 4px 30px rgba(100, 110, 140, 0.08),
+    0 1px 3px rgba(100, 110, 140, 0.05);
+}
+
+/* Card shine — brighter white gradient overlay in light mode */
+html:not([data-theme="dark"]) .clay-card::before {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.6) 0%,
+    rgba(255, 255, 255, 0.1) 40%,
+    transparent 70%
+  );
+}
+
+/* Upload zone — gradient border in light mode */
+html:not([data-theme="dark"]) .upload-zone {
+  border: 2.5px solid transparent;
+  background-image:
+    linear-gradient(var(--bg-card), var(--bg-card)),
+    linear-gradient(135deg, var(--accent-periwinkle), var(--accent-coral), var(--accent-sage));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  border-radius: 24px;
+}
+
+html:not([data-theme="dark"]) .upload-zone.dragover {
+  background-image:
+    linear-gradient(rgba(240, 98, 146, 0.04), rgba(240, 98, 146, 0.04)),
+    linear-gradient(135deg, var(--accent-coral), var(--accent-periwinkle), var(--accent-sage));
+}
+
+/* Upload icon animated gradient pulse */
+@keyframes uploadPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(240, 98, 146, 0.25); }
+  50%      { box-shadow: 0 0 0 12px rgba(240, 98, 146, 0); }
+}
+
+html:not([data-theme="dark"]) .upload-zone:not(.dragover):hover {
+  box-shadow: var(--shadow-clay-lg), 0 0 40px rgba(92, 107, 192, 0.08);
+}
+
+/* Table enhancements — light mode zebra stripes + accent header */
+html:not([data-theme="dark"]) .clay-table th {
+  background: linear-gradient(180deg, #F3F4FA, #ECEEF5);
+  border-bottom: 2px solid var(--accent-periwinkle);
+  color: var(--accent-periwinkle);
+}
+
+html:not([data-theme="dark"]) .clay-table tbody tr:nth-child(even) td {
+  background: rgba(92, 107, 192, 0.03);
+}
+
+html:not([data-theme="dark"]) .clay-table tbody tr:hover td {
+  background: rgba(92, 107, 192, 0.08);
+}
+
+/* Primary button — glow effect in light mode */
+html:not([data-theme="dark"]) .btn-primary {
+  background: linear-gradient(135deg, #F06292, #E91E63);
+  box-shadow:
+    var(--shadow-clay-sm),
+    0 4px 16px rgba(240, 98, 146, 0.25);
+}
+
+html:not([data-theme="dark"]) .btn-primary:hover {
+  box-shadow:
+    var(--shadow-clay-md),
+    0 6px 24px rgba(240, 98, 146, 0.35);
+}
+
+/* Sage button — gradient + glow */
+html:not([data-theme="dark"]) .btn-sage {
+  background: linear-gradient(135deg, #66BB6A, #43A047);
+  box-shadow:
+    var(--shadow-clay-sm),
+    0 4px 16px rgba(102, 187, 106, 0.2);
+}
+
+/* Periwinkle button — gradient + glow */
+html:not([data-theme="dark"]) .btn-periwinkle {
+  background: linear-gradient(135deg, #5C6BC0, #3F51B5);
+  box-shadow:
+    var(--shadow-clay-sm),
+    0 4px 16px rgba(92, 107, 192, 0.2);
+}
+
+/* Secondary button — softer, but still visible in light mode */
+html:not([data-theme="dark"]) .btn-secondary {
+  background: #FFFFFF;
+  border: 1px solid rgba(100, 110, 140, 0.1);
+  color: var(--text-primary);
+}
+
+/* Stat tile — subtle gradient overlay */
+html:not([data-theme="dark"]) .stat-tile {
+  background: linear-gradient(145deg, #FFFFFF 0%, #F8F9FD 100%);
+  border: 1px solid rgba(100, 110, 140, 0.08);
+}
+
+/* Clay chip — more refined in light mode */
+html:not([data-theme="dark"]) .clay-chip {
+  background: #FFFFFF;
+  border: 1.5px solid rgba(100, 110, 140, 0.1);
+  color: var(--text-secondary);
+}
+
+html:not([data-theme="dark"]) .clay-chip:hover {
+  background: #F3F4FA;
+  border-color: var(--accent-periwinkle);
+  color: var(--accent-periwinkle);
+}
+
+html:not([data-theme="dark"]) .clay-chip.active {
+  background: linear-gradient(135deg, #5C6BC0, #3F51B5);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: var(--shadow-clay-md), 0 4px 16px rgba(92, 107, 192, 0.25);
+}
+
+/* Input focus ring — colorful glow */
+html:not([data-theme="dark"]) .clay-input {
+  background: #FFFFFF;
+  border: 1.5px solid rgba(100, 110, 140, 0.12);
+  box-shadow: inset 1px 1px 4px rgba(100, 110, 140, 0.06);
+}
+
+html:not([data-theme="dark"]) .clay-input:focus {
+  border-color: var(--accent-periwinkle);
+  box-shadow:
+    inset 1px 1px 4px rgba(100, 110, 140, 0.06),
+    0 0 0 3px rgba(92, 107, 192, 0.12),
+    0 4px 16px rgba(92, 107, 192, 0.08);
+}
+
+/* Badge refinements — light mode */
+html:not([data-theme="dark"]) .badge-coral {
+  background: rgba(240, 98, 146, 0.12);
+  color: #C2185B;
+}
+
+html:not([data-theme="dark"]) .badge-sage {
+  background: rgba(102, 187, 106, 0.12);
+  color: #2E7D32;
+}
+
+html:not([data-theme="dark"]) .badge-periwinkle {
+  background: rgba(92, 107, 192, 0.12);
+  color: #283593;
+}
+
+html:not([data-theme="dark"]) .badge-neutral {
+  background: rgba(139, 146, 168, 0.12);
+  color: var(--text-secondary);
+}
+
+/* Missing bar — gradient enhancement */
+html:not([data-theme="dark"]) .missing-bar-fill {
+  background: linear-gradient(90deg, #F06292, #FF80AB);
+}
+
+html:not([data-theme="dark"]) .missing-bar-track {
+  background: rgba(100, 110, 140, 0.06);
+  box-shadow: inset 1px 1px 3px rgba(100, 110, 140, 0.08);
+}
+
+/* Scrollbar — lighter in light mode */
+html:not([data-theme="dark"]) ::-webkit-scrollbar-thumb {
+  background: rgba(100, 110, 140, 0.2);
+}
+
+html:not([data-theme="dark"]) ::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 110, 140, 0.35);
+}
+
+/* Footer — subtle gradient underline */
+html:not([data-theme="dark"]) footer {
+  background: linear-gradient(180deg, transparent 0%, rgba(92, 107, 192, 0.03) 100%);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -166,25 +381,37 @@ h3 { font-size: clamp(1rem, 1.5vw, 1.25rem); }
 
 .bento-grid {
   display: grid;
-  gap: 20px;
-  padding: 20px;
+  gap: 24px;
+  padding: 24px;
   grid-template-columns: repeat(12, 1fr);
   grid-template-rows: auto;
   max-width: 1600px;
   margin: 0 auto;
+  align-items: stretch;
 }
 
 /* Upload Zone — spans full width when no data loaded */
 .bento-upload    { grid-column: 1 / -1; }
 
-/* After data loads, asymmetric 12-col layout */
+/* After data loads, asymmetric 12-col layout with explicit row pairing */
 .bento-preview   { grid-column: 1 / 9; }
 .bento-stats     { grid-column: 9 / 13; }
 .bento-filter    { grid-column: 1 / 5; }
 .bento-nlq       { grid-column: 5 / 13; }
+.bento-dock      { grid-column: 1 / -1; }
 .bento-chart     { grid-column: 1 / 9; min-height: 420px; }
 .bento-insight   { grid-column: 9 / 13; }
-.bento-dock      { grid-column: 1 / -1; }
+
+/* Ensure child cards fill their grid cell */
+.bento-preview > *,
+.bento-stats > *,
+.bento-filter > *,
+.bento-nlq > *,
+.bento-chart > *,
+.bento-insight > *,
+.bento-dock > * {
+  height: 100%;
+}
 
 /* Tablet — 8 col */
 @media (max-width: 1100px) {
