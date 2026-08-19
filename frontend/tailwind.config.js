@@ -4,12 +4,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        coral:       { DEFAULT: '#FF6B6B', light: '#FFB3B3', dark: '#cc4444' },
-        sage:        { DEFAULT: '#88B04B', light: '#C5E08A', dark: '#5a7a1e' },
-        periwinkle:  { DEFAULT: '#6B7FD7', light: '#B3BFF0', dark: '#4055b0' },
+        coral:       { DEFAULT: '#F06292', light: '#F8BBD0', dark: '#C2185B' },
+        sage:        { DEFAULT: '#66BB6A', light: '#A5D6A7', dark: '#2E7D32' },
+        periwinkle:  { DEFAULT: '#5C6BC0', light: '#9FA8DA', dark: '#283593' },
         clay: {
-          base:      '#F5F0E8',
-          card:      '#FAF7F2',
+          base:      '#F0F2F8',
+          card:      '#FFFFFF',
           dark:      '#2D2438',
           'card-dark': '#3A2F4A',
         },
